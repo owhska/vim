@@ -59,6 +59,7 @@ set statusline+=\ %{Modified_Get()}\
 set laststatus=2
 set shortmess+=atI
 set cmdheight=1
+set noswapfile
 
 " ============================================
 " SYNTAX E CORES
@@ -359,6 +360,7 @@ augroup END
 
 nnoremap <leader>gs :vertical terminal git status<CR>
 nnoremap <leader>gl :vertical terminal git log --oneline<CR>
+nnoremap <silent> <leader>gc :vertical terminal git -c core.editor=vim commit<CR>
 
 let g:gitdiff_list_buf = -1
 let g:gitdiff_list_win = -1
