@@ -221,7 +221,9 @@ set tabline=%!NvimTabLine()
 " ============================================
 
 let mapleader = " "
-nnoremap <leader>e :Lexplore<CR>
+
+nnoremap <leader>e :let g:netrw_chgwin = -1 \| let g:netrw_browse_split = 0 \| Ex<CR>
+nnoremap <leader>b :Lexplore<CR>
 nnoremap <leader>f :e<Space>
 nnoremap <leader>wq :q<CR>
 nnoremap <leader>ww :w<CR>
