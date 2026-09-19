@@ -440,7 +440,7 @@ if g:is_windows
 else
     set fileformats=unix,dos
     " No Linux, usa o shell do ambiente (bash/zsh)
-    set shell=/bin/sh
+    set shell=/bin/bash
     set shellcmdflag=-c
     set shellpipe=2>&1\ \|\ tee
     set shellredir=>
