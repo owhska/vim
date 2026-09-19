@@ -75,18 +75,60 @@ if g:is_windows
     let g:netrw_cygwin=0
 endif
 
-colorscheme pablo
+set t_Co=256
+syntax on
+set background=dark
+colorscheme default
 
-highlight LineNr ctermfg=255
-highlight SpecialKey ctermfg=235
-highlight Function ctermfg=11
-highlight Constant ctermfg=11
-highlight Statement ctermfg=11
-highlight String ctermfg=11
-highlight StatusLine ctermbg=NONE ctermfg=255 cterm=NONE
-highlight StatusLineNC ctermbg=NONE ctermfg=255 cterm=NONE
-highlight Normal ctermbg=NONE
-highlight NonText ctermfg=238 ctermbg=NONE
+highlight Normal       ctermfg=188 ctermbg=234
+highlight LineNr       ctermfg=242 ctermbg=NONE
+highlight CursorLineNr ctermfg=180 ctermbg=NONE cterm=bold
+highlight NonText      ctermfg=242 ctermbg=NONE
+highlight SpecialKey   ctermfg=242 ctermbg=NONE
+highlight EndOfBuffer  ctermfg=242 ctermbg=NONE
+highlight StatusLine   ctermfg=188 ctermbg=235 cterm=NONE
+highlight StatusLineNC ctermfg=242 ctermbg=235 cterm=NONE
+highlight VertSplit    ctermfg=242 ctermbg=234 cterm=NONE
+highlight Visual       ctermfg=NONE ctermbg=237
+highlight Search       ctermfg=234 ctermbg=180
+highlight MatchParen   ctermfg=180 ctermbg=NONE cterm=bold,underline
+highlight Pmenu        ctermfg=188 ctermbg=235
+highlight PmenuSel     ctermfg=234 ctermbg=110
+
+highlight Comment      ctermfg=180 cterm=NONE
+highlight Constant     ctermfg=108 cterm=NONE
+highlight String       ctermfg=108 cterm=NONE
+highlight Character    ctermfg=108 cterm=NONE
+highlight Number       ctermfg=108 cterm=NONE
+highlight Float        ctermfg=108 cterm=NONE
+highlight Boolean      ctermfg=139 cterm=NONE
+highlight Identifier   ctermfg=188 cterm=NONE
+highlight Function     ctermfg=110 cterm=NONE
+highlight Statement    ctermfg=188 cterm=NONE
+highlight Operator     ctermfg=242 cterm=NONE
+highlight Delimiter    ctermfg=242 cterm=NONE
+highlight PreProc      ctermfg=188 cterm=NONE
+highlight Macro        ctermfg=139 cterm=NONE
+highlight Type         ctermfg=139 cterm=NONE
+highlight StorageClass ctermfg=188 cterm=NONE
+highlight Special      ctermfg=139 cterm=NONE
+highlight Error        ctermfg=168 ctermbg=NONE cterm=bold
+highlight Todo         ctermfg=180 ctermbg=NONE cterm=bold
+
+" syntax on
+" set background=dark
+" colorscheme default
+" set termguicolors
+" highlight SpecialKey ctermfg=235
+" highlight LineNr ctermfg=255
+" highlight Function ctermfg=11
+" highlight Constant ctermfg=11
+" highlight Statement ctermfg=11
+" highlight String ctermfg=11
+" highlight StatusLine ctermbg=NONE ctermfg=255 cterm=NONE
+" highlight StatusLineNC ctermbg=NONE ctermfg=255 cterm=NONE
+" highlight Normal ctermbg=NONE
+" highlight NonText ctermfg=238 ctermbg=NONE
 
 " ============================================
 " FILEtype plugin (precisa vir antes de netrw/Lexplore)
@@ -228,7 +270,20 @@ set tabline=%!NvimTabLine()
 
 let mapleader = " "
 
-nnoremap <leader>e :let g:netrw_chgwin = -1 \| let g:netrw_browse_split = 0 \| Ex<CR>
+"nnoremap <leader>e :let g:netrw_chgwin = -1 \| let g:netrw_browse_split = 0 \| Ex<CR>
+"
+function! s:AbrirNetrwNoDirDoArquivo() abort
+    let g:netrw_chgwin = -1
+    let g:netrw_browse_split = 0
+    let l:dir = expand('%:p:h')
+    if l:dir ==# '' || !isdirectory(l:dir)
+        let l:dir = getcwd()
+    endif
+    execute 'Explore ' . fnameescape(l:dir)
+endfunction
+
+nnoremap <leader>e :call <SID>AbrirNetrwNoDirDoArquivo()<CR>
+
 nnoremap <leader>b :Lexplore<CR>
 nnoremap <leader>f :e<Space>
 nnoremap <leader>wq :q<CR>
@@ -594,7 +649,7 @@ if g:is_windows
     set fileformats=dos,unix
     set shellslash
     " cmd.exe é o padrão mais estável no Windows puro
-    set shell=cmd.exe
+    set shell=pwsh.exe
     set shellcmdflag=/c
     set shellpipe=>
     set shellredir=>
