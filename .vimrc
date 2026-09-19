@@ -359,9 +359,168 @@ augroup END
 
 nnoremap <leader>gs :vertical terminal git status<CR>
 nnoremap <leader>gl :vertical terminal git log --oneline<CR>
-nnoremap <leader>gd :tab terminal git diff<CR>
 
-tnoremap <leader><Tab> <C-\><C-n><leader><Tab>
+let g:gitdiff_list_buf = -1
+let g:gitdiff_list_win = -1
+
+function! GitDiffList() abort
+    if g:gitdiff_list_win != -1 && win_id2win(g:gitdiff_list_win) > 0
+        call win_gotoid(g:gitdiff_list_win)
+        return
+    endif
+
+    if g:gitdiff_list_buf != -1 && bufexists(g:gitdiff_list_buf)
+        execute 'topleft 25vsplit'
+        execute 'buffer ' . g:gitdiff_list_buf
+        let g:gitdiff_list_win = win_getid()
+        call s:GitDiffListSetup()
+        return
+    endif
+
+    execute 'topleft 25vnew'
+    let g:gitdiff_list_win = win_getid()
+    let g:gitdiff_list_buf = bufnr('%')
+    execute 'file [Git Diff]'
+    call s:GitDiffListSetup()
+    call GitDiffRefresh()
+endfunction
+
+function! s:GitDiffListSetup() abort
+    setlocal buftype=nofile bufhidden=hide noswapfile nowrap
+    setlocal nonumber norelativenumber
+    setlocal filetype=gitdiff-list
+    nnoremap <buffer> <silent> <CR> :<C-u>call GitDiffAbrir()<CR>
+    nnoremap <buffer> <silent> o    :<C-u>call GitDiffAbrir()<CR>
+    nnoremap <buffer> <silent> q    :<C-u>call GitDiffOcultarLista()<CR>
+    nnoremap <buffer> <silent> r    :<C-u>call GitDiffRefresh()<CR>
+endfunction
+
+function! GitDiffOcultarLista() abort
+    if g:gitdiff_list_win != -1 && win_id2win(g:gitdiff_list_win) > 0
+        call win_gotoid(g:gitdiff_list_win)
+        close
+        let g:gitdiff_list_win = -1
+    endif
+endfunction
+
+function! GitDiffToggle() abort
+    if g:gitdiff_list_win != -1 && win_id2win(g:gitdiff_list_win) > 0
+        call GitDiffOcultarLista()
+    else
+        if g:gitdiff_list_buf != -1 && bufexists(g:gitdiff_list_buf)
+            call GitDiffList()
+        else
+            execute 'tabnew'
+            call GitDiffList()
+        endif
+    endif
+endfunction
+
+function! GitDiffRefresh() abort
+    if g:gitdiff_list_buf == -1 || !bufexists(g:gitdiff_list_buf)
+        return
+    endif
+    let l:files = systemlist('git diff --name-only HEAD 2>/dev/null')
+    if empty(l:files)
+        let l:files = systemlist('git diff --name-only 2>/dev/null')
+    endif
+    let l:files += systemlist('git diff --cached --name-only 2>/dev/null')
+    let l:seen = {}
+    let l:unique = []
+    for f in l:files
+        if f != '' && !has_key(l:seen, f)
+            let l:seen[f] = 1
+            call add(l:unique, f)
+        endif
+    endfor
+
+    call bufload(g:gitdiff_list_buf)
+    call setbufvar(g:gitdiff_list_buf, '&modifiable', 1)
+    call deletebufline(g:gitdiff_list_buf, 1, '$')
+    call setbufline(g:gitdiff_list_buf, 1,
+        \ empty(l:unique) ? ['(no modified files)'] : l:unique)
+    call setbufvar(g:gitdiff_list_buf, '&modifiable', 0)
+
+    if g:gitdiff_list_win != -1 && win_id2win(g:gitdiff_list_win) > 0
+        call win_gotoid(g:gitdiff_list_win)
+    endif
+endfunction
+
+function! GitDiffAbrir() abort
+    let l:fname = getline('.')
+    if l:fname == '' || l:fname[0] == '('
+        return
+    endif
+
+    let l:cwd  = getcwd()
+    let l:path = fnamemodify(l:cwd . '/' . l:fname, ':p')
+    if !filereadable(l:path)
+        echohl WarningMsg | echom "File does not exist: " . l:fname | echohl None
+        return
+    endif
+
+    let l:root = systemlist('git -C ' . shellescape(l:cwd) . ' rev-parse --show-toplevel 2>/dev/null')
+    if v:shell_error != 0 || empty(l:root)
+        echohl WarningMsg | echom "Not inside a git repository" | echohl None
+        return
+    endif
+    let l:root = l:root[0]
+
+    let l:gitpath = fnamemodify(l:path, ':.')
+    if stridx(l:gitpath, l:root) == 0
+        let l:gitpath = strpart(l:gitpath, strlen(l:root) + 1)
+    endif
+
+    let l:orig = systemlist('git -C ' . shellescape(l:root) . ' show HEAD:' . shellescape(l:gitpath) . ' 2>/dev/null')
+    if v:shell_error != 0
+        let l:orig = systemlist('git -C ' . shellescape(l:root) . ' show :' . shellescape(l:gitpath) . ' 2>/dev/null')
+    endif
+
+    let l:list_win = g:gitdiff_list_win
+    let l:list_width = 25
+
+    if l:list_win != -1 && win_id2win(l:list_win) > 0
+        call win_gotoid(l:list_win)
+        let l:list_width = winwidth(0)
+    endif
+    only
+
+    execute 'rightbelow vsplit ' . fnameescape(l:path)
+    let l:cur_win = win_getid()
+
+    execute 'leftabove vnew'
+    setlocal buftype=nofile bufhidden=wipe noswapfile
+    execute 'file ' . fnameescape('[HEAD] ' . l:gitpath)
+    call setline(1, empty(l:orig) ? [''] : l:orig)
+    setlocal nomodified
+
+    call win_gotoid(l:cur_win)
+    diffthis
+    wincmd h
+    diffthis
+
+    wincmd l
+
+    if l:list_win != -1 && win_id2win(l:list_win) > 0
+        call win_gotoid(l:list_win)
+        execute 'vertical resize ' . l:list_width
+        wincmd l
+    endif
+
+    nnoremap <buffer> <silent> q :<C-u>call GitDiffFecharDiff()<CR>
+endfunction
+
+function! GitDiffFecharDiff() abort
+    diffoff!
+    if g:gitdiff_list_win != -1 && win_id2win(g:gitdiff_list_win) > 0
+        call win_gotoid(g:gitdiff_list_win)
+    endif
+    only
+endfunction
+
+nnoremap <silent> <leader>gd :call GitDiffToggle()<CR>
+nnoremap <silent> <leader>gr :call GitDiffRefresh()<CR>
+
 tnoremap <S-Right> <C-\><C-n>:bnext<CR>
 tnoremap <S-Left>  <C-\><C-n>:bprevious<CR>
 tnoremap <C-PageDown> <C-\><C-n>:tabnext<CR>
