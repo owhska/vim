@@ -221,7 +221,8 @@ set tabline=%!NvimTabLine()
 " ============================================
 
 let mapleader = " "
-nnoremap <leader>e :Lexplore<CR>
+nnoremap <leader>e :Ex<CR>
+nnoremap <leader>b :Lexplore<CR>
 nnoremap <leader>f :e<Space>
 nnoremap <leader>wq :q<CR>
 nnoremap <leader>ww :w<CR>
