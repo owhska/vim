@@ -100,8 +100,13 @@ filetype plugin on
 set completeopt=menuone,noinsert,noselect
 
 function! DispararOmniAutomatico()
-    if !pumvisible() && v:char =~ '\w'
+    if pumvisible() || v:char !~ '\w'
+        return
+    endif
+    if &omnifunc !=# ''
         call feedkeys("\<C-x>\<C-o>", 'n')
+    else
+        call feedkeys("\<C-x>\<C-n>", 'n')
     endif
 endfunction
 
