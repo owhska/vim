@@ -113,8 +113,7 @@ endfunction
 augroup OmniAuto
     autocmd!
     autocmd FileType javascript,python,c,cpp,html,css,vim
-                \ autocmd! OmniAuto InsertCharPre <buffer>
-                \ | autocmd OmniAuto InsertCharPre <buffer> call DispararOmniAutomatico()
+                \ autocmd InsertCharPre <buffer> call DispararOmniAutomatico()
 augroup END
 
 " ============================================
